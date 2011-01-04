@@ -1,7 +1,7 @@
 package org.musicpath
 
 import org.scardf.{NodeConverter, SubjectNode, Property, GraphNode, UriRef, TypedLiteral, PlainLiteral, XSD, having}
-import NodeConverter.asGraphNode
+import NodeConverter.{asGraphNode, asLexic}
 import scala.xml.{NodeSeq, Node, Elem, Text, NamespaceBinding, MetaData, UnprefixedAttribute}
 import java.net.URI
 
@@ -17,7 +17,7 @@ import java.net.URI
 object Template {
   //var pageUri:URI
   object A { // convenience methods for retrieving the various RDFa attributes
-    private def curie(attrVal:String, scope:NamespaceBinding) = attrVal.split(':') match {
+    def curie(attrVal:String, scope:NamespaceBinding) = attrVal.split(':') match {
       case Array(prefix, local) => Some( UriRef( scope.getURI(prefix) + local) )
       case other => None  // If it's supposed to be a CURIE and isn't, ignore it, as per the spec.
     }
@@ -35,6 +35,20 @@ object Template {
     def rev(e:Elem) = attr2Curie("rev", e)
     def src(e:Elem) = attr2Uri("src", e)
     def href(e:Elem) = attr2Uri("href", e)
+    def templateValues(e:Elem) = e.attribute("template-values").map(_.text.split(' '))
+    /*
+    def values(e:Elem) = (kids:NodeSeq) => e.attribute("values") match {
+        case Some(attr) => {
+            values = attr.text.split(' ')
+            kids.map({
+                case Text(s) => s.format(values : _*)
+                case other => other
+            })
+        }
+        case None = kids 
+    }
+    */
+                
   }
 
 //def maybe[A,B](default:B, option:Option[A], f:A=>B) = option.map(f).getOrElse(default)
@@ -46,7 +60,21 @@ object Template {
                 val (text, dt) = datatype(obj)
                 e.copy(attributes = datatypeAttr(dt, e.attributes), child = Text(text) +: processedChildren)
             }.toSeq
-            case None => e.copy(child=processedChildren)
+            case None => {
+                val templatedChildren = A.templateValues(e) match {
+                    case Some(properties) =>  {
+                        // TODO: invalid CURIEs get dropped off at this point.
+                        val values = properties.flatMap( A.curie(_, e.scope) ).map(subject/_/asLexic ) 
+                        processedChildren.map({
+                            case Text(s) => Text( s.format(values : _*) )
+                            case other => other
+                        })
+                    }
+                    case None => processedChildren
+                }
+                e.copy(child=templatedChildren)
+                //e.copy( child = sprintf(e, subject, processedChildren) )
+            }
         }
     }
 
@@ -86,7 +114,10 @@ object Template {
                   println("More than one "+predicate.uri+" found for "+subject.node.toString+" on element "+e.label+", ignoring rest.")
                   (Text(text) +: processedChildren, datatypeAttr(dt, link))
                 }
+                // I guess it wouldn't hurt to show the rest of the values found.
+                // I just didn't want to have no values remove the element that has the link
           }
+            // TODO: sprintf can happen here
             case None=> (processedChildren, link)
         }
         e.copy(attributes = attributes, child = contents )
@@ -111,6 +142,7 @@ object Template {
                           realizeLink(e, "")(subject)
                        else
                           // Recurse, carry on, keep looking.
+                          // TODO: sprintf can happen here
                           e.copy( child = e.child.map(copyTilLink(_)(subject)) )
         }
       }
