@@ -56,15 +56,16 @@ object Template {
     def propertize(e:Elem)(subject:GraphNode):NodeSeq = {
         val processedChildren = e.child flatMap processLinks(subject)
         A.property(e) match {
-            case Some(predicate) => (subject/predicate).flatMap {obj => 
+              // Make as many copies of this Element as their are values for that predicate.
+            case Some(predicate) => subject/predicate flatMap {obj =>
                 val (text, dt) = datatype(obj)
                 e.copy(attributes = datatypeAttr(dt, e.attributes), child = Text(text) +: processedChildren)
-            }.toSeq
+            } toSeq  // The many still needs to be of type Seq
             case None => {
                 val templatedChildren = A.templateValues(e) match {
                     case Some(properties) =>  {
                         // TODO: invalid CURIEs get dropped off at this point.
-                        val values = properties.flatMap( A.curie(_, e.scope) ).map(subject/_/asLexic ) 
+                        val values = properties.map( A.curie(_, e.scope).get ).map(subject/_ map toScalaType head)
                         processedChildren.map({
                             case Text(s) => Text( s.format(values : _*) )
                             case other => other
@@ -72,11 +73,19 @@ object Template {
                     }
                     case None => processedChildren
                 }
-                e.copy(child=templatedChildren)
+                e.copy(child=templatedChildren, attributes = e.attributes.remove("template-values"))
                 //e.copy( child = sprintf(e, subject, processedChildren) )
             }
         }
     }
+
+    def toScalaType(l:org.scardf.Node) = l match {
+        case TypedLiteral(string, XSD.string) => string
+        case TypedLiteral(string, XSD.integer) => string.toInt
+        case PlainLiteral(string, _) => string
+        case UriRef(str) => str
+    }
+
 
     def datatype(l:org.scardf.Node):(String, String) = l match {
         case TypedLiteral(string, XSD.string) => (string, "xs:string")
@@ -123,11 +132,11 @@ object Template {
         e.copy(attributes = attributes, child = contents )
     }
 
-    def resolve(qname:String, scope:NamespaceBinding):String = {
-        val Array(prefix, local) = qname split ':'
-        scope.getURI(prefix) + local
-    }
+   // templateSingle vs. templateMany
+   // templateyFn(subject, children, attributes, scope) => (children, attributes)
 
+   // template(subject, elem, children)
+   // template(subject, elem, children, attributes)
     private def copyTilLink(node:Node)(subject:GraphNode):Node = node match {
       case e:Elem => {
         val atts = e.attributes.map(_.key).toSet
@@ -171,7 +180,14 @@ object Template {
                 case Some(newSubjects) => {
                     // Take the first link attribute name found:
                     Set("resource", "href") intersect e.attributes.map(_.key).toSet headOption match {
-                        case Some(ref) => newSubjects.flatMap(realizeLink(e, ref)).toSeq
+                          // If we ourselves are the target of the rel, copy ourselves as many times as need be.
+                        case Some(ref) => newSubjects flatMap realizeLink(e, ref) toSeq
+                           // Otherwise, take our first child that's an Element, and make as many copies as there are values for that rel,
+                           // traversing down with that new subject to the first about/resource/etc attribute we can point it at.
+                           // We want to call propertize on this case?
+                           // Single-valued, at any rate.  Extract what's in realizeLink as a function.
+                           // eg. e.copy( child = propOrSprintf( newSubjects.flatMap... )
+                           // how about templateSingle(newSubjects...)
                         case None => e.copy( child = newSubjects.flatMap( copyTilLink( e.child.dropWhile(!_.isInstanceOf[Elem]).head ) ).toSeq) 
                     }
                 }
