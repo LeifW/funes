@@ -1,6 +1,6 @@
 package org.musicpath
 
-import org.scardf.{NodeConverter, SubjectNode, Property, GraphNode, UriRef, Blank, TypedLiteral, PlainLiteral, XSD, having}
+import org.scardf.{Node=>RdfNode, NodeConverter, SubjectNode, Property, GraphNode, UriRef, Blank, TypedLiteral, PlainLiteral, XSD, having}
 import NodeConverter.{asGraphNode, asLexic}
 import scala.xml.{NodeSeq, Node, Elem, Text, NamespaceBinding, MetaData, UnprefixedAttribute}
 import java.net.URI
@@ -13,8 +13,12 @@ import java.net.URI
   Go!
  */
 
-//class Template(pageUri:URI, includes:Map[String, Elem])
 object Template {
+  def apply(page:GraphNode, includes:Map[String, (String, GraphNode)=>Node]) = new Template(page, includes)
+}
+
+class Template(page:GraphNode, includes:Map[String, (String, GraphNode)=>Node]) {
+  val pageUri = new URI(page.node.asInstanceOf[UriRef].uri)
   //var pageUri:URI
   object A { // convenience methods for retrieving the various RDFa attributes
     def curie(attrVal:String, scope:NamespaceBinding) = attrVal.split(':') match {
@@ -86,7 +90,7 @@ object Template {
         }
     }
 
-    def toScalaType(l:org.scardf.Node) = l match {
+    def toScalaType(l:RdfNode) = l match {
         case TypedLiteral(string, XSD.string) => string
         case TypedLiteral(string, XSD.integer) => string.toInt
         case PlainLiteral(string, _) => string
@@ -279,9 +283,9 @@ object Template {
 
     def recurseNodes(subject:GraphNode)(node:Node):NodeSeq = node match {
       case Elem(null, "include", attributes, _, _ *) => attributes.key match {
-        case "yield" => <yielded/>
-        case other => <oof/>
-      }
+        case "yield" => recurseNodes(subject)(includes("yield")(node.scope.toString, subject))
+        case other:String => includes(other)(attributes.value.text, subject)
+    }
       case e:Elem => {
         val currentSubject = A.about(e) orElse A.src(e) map (subject.graph/_) getOrElse subject
         processLinks(currentSubject, e)
@@ -289,7 +293,8 @@ object Template {
       case other => other
         //case t:Text => t
     }
+
+  def apply(node:Node):NodeSeq = recurseNodes(page)(node)
 }
 
-//recurse()
 // vim: set ts=4 sw=4 et:
