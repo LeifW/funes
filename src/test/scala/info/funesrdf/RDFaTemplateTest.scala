@@ -1,14 +1,7 @@
-package org.musicpath
+package info.funesrdf
 
 import org.specs._
 import org.scardf._
-
-/**
- * Created by IntelliJ IDEA.
- * User: leif
- * Date: 12/30/10
- * Time: 11:04 PM
- */
 
 class RDFaTemplateTest extends Specification {
   "RDFa Templating" should {
@@ -26,14 +19,14 @@ class RDFaTemplateTest extends Specification {
           <a href="" rel="foaf:knows"><span property="foaf:name"/></a>
         </p>
 
-      Template(graph/leif, Map("stache" -> ((_:String, _:GraphNode) => <stached/>)))(template) must equalIgnoreSpace(
+      //Template(graph/leif, Map("stache" -> ((_:String, _:GraphNode) => <stached/>)))(template) must equalIgnoreSpace(
+      Template(graph/leif, Map())(template) must equalIgnoreSpace(
       <p xmlns:foaf="http://xmlns.com/foaf/0.1/">
         <span property="foaf:name">Leif</span>
         <a href="http://john.com" rel="foaf:knows"><span property="foaf:name">John</span></a>
         <a href="http://bill.com" rel="foaf:knows"><span property="foaf:name">Bill</span></a>
       </p>)
     }
-/*
      "handle sprintf templating" in {
         val age = FOAF\"age"
         val ourGraph = Graph(leif-age->31)
@@ -42,13 +35,13 @@ class RDFaTemplateTest extends Specification {
            I can't believe I'm %d already.
         </p>
 
-        Template.recurseNodes(ourGraph/leif)(template) must equalIgnoreSpace(
+        //Template.recurseNodes(ourGraph/leif)(template) must equalIgnoreSpace(
+        Template(ourGraph/leif, Map())(template) must equalIgnoreSpace(
         <p xmlns:foaf="http://xmlns.com/foaf/0.1/">
            I can't believe I'm 31 already.
         </p>)
 
      }
-     */
 
   }
 

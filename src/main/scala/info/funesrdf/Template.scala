@@ -1,4 +1,4 @@
-package org.musicpath
+package info.funesrdf
 
 import org.scardf.{Node=>RdfNode, NodeConverter, SubjectNode, Property, GraphNode, UriRef, Blank, TypedLiteral, PlainLiteral, XSD, having}
 import NodeConverter.{asGraphNode, asLexic}
@@ -26,12 +26,12 @@ class Template(page:GraphNode, includes:Map[String, (String, GraphNode)=>Node]) 
       case Array(prefix, local) => Some( UriRef( scope.getURI(prefix) + local) )
       case other => None  // If it's supposed to be a CURIE and isn't, ignore it, as per the spec.
     }
-    def attr2Uri(attr:String, e:Elem) = e.attribute(attr).flatMap(a=> if (a.text == "_") None else Some(UriRef(a.text)) )
+    def attr2Uri(attr:String, e:Elem) = e.attribute(attr).flatMap(a=> if (a.text == "_") None else Some(UriRef(pageUri resolve a.text toString)) )
     def attr2Curie(attr:String, e:Elem) = e.attribute(attr).flatMap(a=> curie(a.text, e.scope))
     def attr2UriOrCurie(attr:String, e:Elem) = e.attribute(attr).flatMap { _.text.toList match {
         case List('_') => None // This value means we want to fill it in with the current subject, not read from it.
-        case '['::rest => curie( rest.takeWhile(_ != ']').mkString, e.scope )
-        case other => Some( UriRef( other.mkString ) )
+        case '['::rest => curie( rest takeWhile (_ != ']') mkString, e.scope )
+        case other => Some( UriRef( pageUri resolve other.mkString toString) )
       }
     }
     def about(e:Elem) = attr2UriOrCurie("about", e)
@@ -42,7 +42,7 @@ class Template(page:GraphNode, includes:Map[String, (String, GraphNode)=>Node]) 
     def rev(e:Elem) = attr2Curie("rev", e)
     def src(e:Elem) = attr2Uri("src", e)
     def href(e:Elem) = attr2Uri("href", e)
-    def templateValues(e:Elem) = e.attribute("template-values").map( _.text.split(' ').map( curie(_, e.scope).get ) )
+    def templateValues(e:Elem) = e attribute "template-values" map ( _.text split ' ' map ( curie(_, e.scope).get ) )
     /*
     def values(e:Elem) = (kids:NodeSeq) => e.attribute("values") match {
         case Some(attr) => {
@@ -56,6 +56,13 @@ class Template(page:GraphNode, includes:Map[String, (String, GraphNode)=>Node]) 
     }
     */
                 
+  }
+
+  def addClass(atts:MetaData, className:String) = atts get "class" match {
+    case None => new UnprefixedAttribute("class", className, atts)
+    case Some(existing) => new UnprefixedAttribute("class",
+      existing + " " + className,
+      atts remove "class")
   }
 
 //def maybe[A,B](default:B, option:Option[A], f:A=>B) = option.map(f).getOrElse(default)
@@ -92,7 +99,8 @@ class Template(page:GraphNode, includes:Map[String, (String, GraphNode)=>Node]) 
 
     def toScalaType(l:RdfNode) = l match {
         case TypedLiteral(string, XSD.string) => string
-        case TypedLiteral(string, XSD.integer) => string.toInt
+        case TypedLiteral(string, XSD.int) => string.toInt
+        case TypedLiteral(string, XSD.integer) => BigInt(string)
         case PlainLiteral(string, _) => string
         case UriRef(str) => str
     }
@@ -100,6 +108,7 @@ class Template(page:GraphNode, includes:Map[String, (String, GraphNode)=>Node]) 
 
     def datatype(l:org.scardf.Node):(String, String) = l match {
         case TypedLiteral(string, XSD.string) => (string, "xs:string")
+        case TypedLiteral(string, XSD.int) => (string, "xs:int")
         case TypedLiteral(string, XSD.integer) => (string, "xs:integer")
         case PlainLiteral(string, _) => (string, "")
     }
@@ -125,7 +134,7 @@ class Template(page:GraphNode, includes:Map[String, (String, GraphNode)=>Node]) 
       new UnprefixedAttribute(
         currentName,
         subject.node match {
-          case u:UriRef => u.uri
+          case u:UriRef => pageUri relativize new URI(u.uri) toString
           case b:Blank => b.rend
         },
         currentAttributes

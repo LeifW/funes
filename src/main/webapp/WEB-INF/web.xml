@@ -6,7 +6,7 @@
 
   <servlet>
     <servlet-name>MusicPath</servlet-name>
-    <servlet-class>org.musicpath.MusicPath</servlet-class>
+    <servlet-class>info.funesrdf.MusicPath</servlet-class>
   </servlet>
 
   <servlet-mapping>

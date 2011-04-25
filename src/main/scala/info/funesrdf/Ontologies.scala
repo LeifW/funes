@@ -1,4 +1,4 @@
-package org.musicpath
+package info.funesrdf
 import org.scardf.Vocabulary
 import com.hp.hpl.jena.vocabulary.{OWL => jOWL}
 import com.hp.hpl.jena.sparql.vocabulary.{FOAF => jFOAF}
@@ -21,8 +21,8 @@ object Scene extends Vocabulary("http://musicpath.org/scene#") {
 
 object FOAF extends Vocabulary( jFOAF.getURI ) {
   val Person = FOAF\"Person"
-  val List(name, givenname) =
-      List("name", "givenname") map propStr
+  val List(name, givenname, family_name) =
+      List("name", "givenname", "family_name") map propStr
   val knows = prop("knows")
 }
 
