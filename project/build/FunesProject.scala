@@ -7,23 +7,23 @@ class FunesProject(info: ProjectInfo) extends DefaultWebProject(info) with Coffe
   val scalatraVersion = "2.0.0-SNAPSHOT"
 
   val jettyGroupId = "org.eclipse.jetty"
-  val jettyVersion = "7.2.2.v20101205"
+  val jettyVersion = "7.4.1.v20110513"
   //val scalatraVersion = "2.0.0.M2"
   val scalatra = "org.scalatra" %% "scalatra" % scalatraVersion
   val sonatypeNexusSnapshots = "Sonatype Nexus Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
   // RDF support:
   val mavenLocal = "Local Maven Repository" at "file://"+Path.userHome+"/.m2/repository"
-  val scardf = "org.scardf" % "scardf" % "0.5-SNAPSHOT" // from "http://scardf.googlecode.com/files/scardf-0.5-SNAPSHOT.jar"
+  val scardf = "org.scardf" % "scardf" % "0.5" from "http://scardf.googlecode.com/files/scardf-0.5.jar"
     val jodatime = "joda-time" % "joda-time" % "1.6.1" // Used by scardf
 val jenaRepo = "OpenJena repo" at "http://openjena.org/repo"
     val jena = "com.hp.hpl.jena" % "jena" % "2.6.4"
-    val arq = "com.hp.hpl.jena" % "arq" % "2.8.7"
+    val arq = "com.hp.hpl.jena" % "arq" % "2.8.8"
 //  val tdb = "com.hp.hpl.jena" % "tdb" % "0.8.9"
 
 //  val jetty6 = "org.mortbay.jetty" % "jetty" % "6.1.22" % "provided"
 //  val jettytester = "org.mortbay.jetty" % "jetty-servlet-tester" % "6.1.22" % "test"
 
-val jetty7 = jettyGroupId % "jetty-webapp" % jettyVersion % "test"
+//val jetty7 = jettyGroupId % "jetty-webapp" % jettyVersion % "test"
 val jettytester = jettyGroupId % "test-jetty-servlet" % jettyVersion % "test"
 
   // Utility

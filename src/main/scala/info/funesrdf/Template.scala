@@ -31,7 +31,7 @@ class Template(page:GraphNode, includes:Map[String, (String, GraphNode)=>Node]) 
     def attr2UriOrCurie(attr:String, e:Elem) = e.attribute(attr).flatMap { _.text.toList match {
         case List('_') => None // This value means we want to fill it in with the current subject, not read from it.
         case '['::rest => curie( rest takeWhile (_ != ']') mkString, e.scope )
-        case other => Some( UriRef( pageUri resolve other.mkString toString) )
+        case other => Some( UriRef( {println(other.mkString); pageUri resolve other.mkString toString} ) )
       }
     }
     def about(e:Elem) = attr2UriOrCurie("about", e)
@@ -135,7 +135,7 @@ class Template(page:GraphNode, includes:Map[String, (String, GraphNode)=>Node]) 
         currentName,
         subject.node match {
           case u:UriRef => pageUri relativize new URI(u.uri) toString
-          case b:Blank => b.rend
+          case b:Blank => "["+b.rend+"]" //FIXME this depends on attribute type
         },
         currentAttributes
       )
