@@ -1,38 +1,26 @@
-MusicPath
+  Welcome to Linked Data.
+  You are at Node 0.
+  Use "rel" attribute to traverse to a new subject (node).
+  Use "property" to list a property of the current subject.
+  Go!
 
-Aims to be a linked data wiki of the community music scene.  Made out of Scala, Step, Scardf, Jena, RDF, OWL, and SPARQL-y things on the graph db (triple store) TDB.
-
-Brainstorming wiki (Research leading up to this.  Ideas, related projects, background, etc)
-http://wiki.pdxhub.org/pdx_music_map/
-
-Please, contribute ideas, modeling, UI suggestions!
-Where should this go, what should it be used for?
-
-Written in Scala using:
-Dependencies:
- Step (minimalist web framework inspired by Sinatra)
- http://github.com/alandipert/step
+Dependencies (these are pulled in for you by sbt):
+ Scalatra (minimalist web framework inspired by Sinatra)
+ https://github.com/scalatra/scalatra
 
  Scardf (DSL wrapper for Jena)
  http://code.google.com/p/scardf
 
 To get started:
-* Install SBT if you don't have it already (see http://code.google.com/p/simple-build-tool/wiki/Setup ; essentially it just says to make a script to save typing "java -jar sbt.jar" all the time.)
-git clone http://github.com/alandipert/step.git
-git clone http://github.com/LeifW/scardf.git
-git clone http://github.com/LeifW/MusicPath.git
+* Install SBT if you don't have it already (see http://code.google.com/p/simple-build-tool/wiki/Setup .  You just run java -jar sbt.jar or make a script to do that for you.
+git clone http://github.com/LeifW/funes.git
 
-cd step
-sbt publish-local (this will compile and put step as a library in your .ivy2 directory, to be automatically pulled in as a dependency of musicpath)
-
-Repeat the above with scardf.
-
-cd MusicPath
+cd funes
 sbt
 update (to pull in the listed dependencies)
 jetty-run
-Ta-da!
+
 It should compile and fire up a web server on port 8080.
 Run "test" in sbt to run some tests.
-The main source starts in src/main/scala/org/musicpath/MusicPath.scala
+The main source is in src/main/scala/info/funesrdf/
 When you start hacking, running something like ~compile, ~test, or ~prepare-webapp are useful commands in sbt - any time a file is saved, they'll recompile, test, or restart the running webapp.

@@ -159,46 +159,7 @@ class Template(page:GraphNode, includes:Map[String, (String, GraphNode)=>Node]) 
         // TODO: sprintf can happen here
         case None=> (attributes, contents)
       }
-/*
-    private def populateLink(e:Elem, attr:String)(subject:GraphNode):Elem = {
-        // If this element didn't come with a linky-type attribute, let's make one called say, "about"
-        // If it did come with one, take it off, we're replacing it with the uri of the current subject.
-        val (attrName, attrs) =
-          if (attr == "")
-            ("about", e.attributes)
-          else
-            (attr, e.attributes.remove(attr))
-        // TODO: What do we want to do with blank nodes?
-        val link = subject.node match {
-            case u:UriRef => new UnprefixedAttribute(attrName, u.uri, attrs)
-            case b:Blank => new UnprefixedAttribute(attrName, b.rend, attrs)
-        }
-        // Templating of properties is done a bit different on elements with a resource link, thus is is handled directly here.
-        // If the property has a value,, put it in there as a text node.  If not, delete the property attribute.
-        // More than one value is a warning (put that property on a child element!).
-        val processedChildren = e.child flatMap recurseNodes(subject)
-        val (contents, attributes) = A.property(e) match {
-            case Some(predicate) => subject/predicate map datatype match {
-                case List() => (processedChildren, link.remove("property"))
-                case List((text, dt)) => (Text(text) +: processedChildren, datatypeAttr(dt, link))
-                case (text, dt)::_ => {
-                  println("More than one "+predicate.uri+" found for "+subject.node.toString+" on element "+e.label+", ignoring rest.")
-                  (Text(text) +: processedChildren, datatypeAttr(dt, link))
-                }
-                // I guess it wouldn't hurt to show the rest of the values found.
-                // I just didn't want to have no values remove the element that has the link
-          }
-            // TODO: sprintf can happen here
-            case None=> (processedChildren, link)
-        }
-        e.copy(attributes = attributes, child = contents )
-    }
-  */
-   // templateSingle vs. templateMany
-   // templateyFn(subject, children, attributes, scope) => (children, attributes)
 
-   // template(subject, elem, children)
-   // template(subject, elem, children, attributes)
     private def copyTilLink(node:Node)(subject:GraphNode):NodeSeq = node match {
       case Elem(null, "include", attributes, _, _ *) => <freakYield/> //ttributes.key match {
         //case "yield" => <yielded/>
