@@ -29,7 +29,8 @@ THE SOFTWARE.
 		if (selector && selector != '') {
 			var queue = [];
 			queue.push(this);
-      if (this.is(selector)) matches.push(this[0]); // include the current element in the search, not just children
+			// include the current element in the search, not just children
+                        if (this.is(selector)) matches.push(this[0]); 
 			while(matches.length == 0 && queue.length > 0) {
 				var node = queue.shift();
 				$.each(node.children(), function(i,e) {

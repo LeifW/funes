@@ -20,7 +20,7 @@ class RDFaTemplateTest extends Specification {
         </p>
 
       //Template(graph/leif, Map("stache" -> ((_:String, _:GraphNode) => <stached/>)))(template) must equalIgnoreSpace(
-      Template(graph/leif, Map())(template) must equalIgnoreSpace(
+      Template(graph/leif, Map(), "en")(template) must equalIgnoreSpace(
       <p xmlns:foaf="http://xmlns.com/foaf/0.1/">
         <span property="foaf:name">Leif</span>
         <a href="http://john.com" rel="foaf:knows"><span property="foaf:name">John</span></a>
@@ -36,7 +36,7 @@ class RDFaTemplateTest extends Specification {
         </p>
 
         //Template.recurseNodes(ourGraph/leif)(template) must equalIgnoreSpace(
-        Template(ourGraph/leif, Map())(template) must equalIgnoreSpace(
+        Template(ourGraph/leif, Map(), "en")(template) must equalIgnoreSpace(
         <p xmlns:foaf="http://xmlns.com/foaf/0.1/">
            I can't believe I'm 31 already.
         </p>)

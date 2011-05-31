@@ -14,7 +14,7 @@ object Main {
       XML.write(
         out,
         //Template( (new JenaSerializator(Turtle) readFrom new FileReader(graph))/UriRef(""), Map.empty )( XML.loadFile(template) ).asInstanceOf[Node],
-        Template( (new Serializator(NTriple) readFrom new FileReader(graph))/UriRef(""), Map.empty )( XML.loadFile(template) ).asInstanceOf[Node],
+        Template( (new Serializator(NTriple) readFrom new FileReader(graph))/UriRef(""), Map.empty, "en" )( XML.loadFile(template) ).asInstanceOf[Node],
         "",
         false,
         null //DocType("html", PublicID("-//W3C//DTD XHTML Basic 1.1//EN", "http://www.w3.org/TR/xhtml-basic/xhtml-basic11.dtd"), List())

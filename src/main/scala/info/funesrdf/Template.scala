@@ -1,8 +1,8 @@
 package info.funesrdf
 
-import org.scardf.{Node=>RdfNode, NodeConverter, SubjectNode, Property, GraphNode, UriRef, Blank, TypedLiteral, PlainLiteral, XSD, having}
+import org.scardf.{Node=>RdfNode, NodeConverter, SubjectNode, Property, GraphNode, UriRef, Blank, TypedLiteral, PlainLiteral, LangTag, XSD, having}
 import NodeConverter.{asGraphNode, asLexic}
-import scala.xml.{NodeSeq, Node, Elem, Text, NamespaceBinding, MetaData, UnprefixedAttribute}
+import scala.xml.{NodeSeq, Node, Elem, Text, NamespaceBinding, MetaData, PrefixedAttribute, UnprefixedAttribute}
 import java.net.URI
 
 /*
@@ -13,11 +13,12 @@ import java.net.URI
   Go!
  */
 
+
 object Template {
-  def apply(page:GraphNode, includes:Map[String, (String, GraphNode)=>Node]) = new Template(page, includes)
+  def apply(page:GraphNode, includes:Map[String, Include], lang:String) = new Template(page, includes, LangTag(lang))
 }
 
-class Template(page:GraphNode, includes:Map[String, (String, GraphNode)=>Node]) {
+class Template(page:GraphNode, includes:Map[String, Include], lang:LangTag) {
   val pageUri = new URI(page.node.asInstanceOf[UriRef].uri)
   //var pageUri:URI
   object A { // convenience methods for retrieving the various RDFa attributes
@@ -25,6 +26,7 @@ class Template(page:GraphNode, includes:Map[String, (String, GraphNode)=>Node]) 
       //case Array("_", local) => Some( Blank(local) )
       case Array(prefix, local) => Some( UriRef( scope.getURI(prefix) + local) )
       case other => None  // If it's supposed to be a CURIE and isn't, ignore it, as per the spec.
+      // Actually, log it, to denote errors.
     }
     def attr2Uri(attr:String, e:Elem) = e.attribute(attr).flatMap(a=> if (a.text == "_") None else Some(UriRef(pageUri resolve a.text toString)) )
     def attr2Curie(attr:String, e:Elem) = e.attribute(attr).flatMap(a=> curie(a.text, e.scope))
@@ -71,9 +73,12 @@ class Template(page:GraphNode, includes:Map[String, (String, GraphNode)=>Node]) 
         val processedChildren = e.child flatMap recurseNodes(subject)
         A.property(e) match {
               // Make as many copies of this Element as their are values for that predicate.
-            case Some(predicate) => subject/predicate flatMap {value =>
-                val (text, dt) = datatype(value)
-                e.copy(attributes = datatypeAttr(dt, e.attributes), child = Text(text) +: processedChildren)
+            case Some(predicate) => subject/predicate collect {
+              case TypedLiteral(string, datatype) => 
+                e.copy( child = Text(string), attributes = new UnprefixedAttribute("datatype", typeMap(datatype), e.attributes))
+              case PlainLiteral(string, Some(`lang`)) => 
+                e.copy( child = Text(string), attributes = new PrefixedAttribute("xml", "lang", lang.code, e.attributes))
+              case PlainLiteral(string, None) => e.copy( child = Text(string) )
             } toSeq  // The many still needs to be of type Seq
             // No "property" attribute? Let's check for a "template-value" one.
             case None => A.templateValues(e) match {
@@ -110,9 +115,33 @@ class Template(page:GraphNode, includes:Map[String, (String, GraphNode)=>Node]) 
         case TypedLiteral(string, XSD.string) => (string, "xs:string")
         case TypedLiteral(string, XSD.int) => (string, "xs:int")
         case TypedLiteral(string, XSD.integer) => (string, "xs:integer")
-        case PlainLiteral(string, _) => (string, "")
+        case PlainLiteral(string, lang) => (string, "")
+        //case PlainLiteral(string, `prefLang`) => (string, "")
     }
+    // TypedLiteral = datatype="xs:..."
+    // PlainLiteral[prefLang] = no attribute
+    // PlainLiteral[fallbackLang] = xml:lang=""
+    // PlainLiteral[otherLang] = Null element
+/*
+    case TypedLiteral(string, datatype) => (string, new UnprefixedAttribute("datatype", typeMap(datatype), atts))
+    case PlainLiteral(string, `lang`) => (string, new PrefixedAttribute("xml", "lang", lang, atts))
+    case PlainLiteral(string, None) => (string, atts)
+*/
 
+// Do a collect with the above,
+// and things that don't match - i.e. a PlainLiteral in another language - get left off the results.
+
+    val typeMap = Map(
+        XSD.string -> "xs:string",
+        XSD.int -> "xs:int",
+        XSD.integer -> "xs:integer"
+    )
+
+/*
+    def typeMap(datatype: , atts:MetaData) = new UnprefixedAttribute(
+        "datatype",
+        datatype 
+*/
 
     def datatypeAttr(datatype:String, attr:MetaData):MetaData = {
         if (datatype == "")

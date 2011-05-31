@@ -4,12 +4,11 @@ import java.io.{File, FileWriter, FileOutputStream, StringWriter, FileReader, Bu
 import scala.xml.{XML, Elem, Text}
 import scala.io.Source
 import scala.xml.parsing.ConstructingParser.{fromSource, fromFile}
-import org.scalatra.ScalatraServlet
 
-// Web framework
-import org.scardf._
-//import Template
-class MusicPath extends ScalatraServlet {
+import org.scalatra.ScalatraServlet  // Web framework
+import org.scardf._                  // RDF lib
+
+class Funes extends ScalatraServlet {
   val appRoot = "app"
   val serializer = new Serializator(NTriple)
   //val model = serializer.readFrom(new BufferedReader(new FileReader("dump.nt")))
@@ -30,7 +29,7 @@ class MusicPath extends ScalatraServlet {
       case "upperCaseName" => Text(s/FOAF.givenname.v toUpperCase)
     } )
   )
-  def template(templ:String, resource:String) =
+  def template(templ:String, resource:String, lang:String) =
     Template(
       Model/UriRef(hostname+resource),
       includes + ("yield" -> {(s:String, _:GraphNode) =>
@@ -40,7 +39,8 @@ class MusicPath extends ScalatraServlet {
         val docWithNamespaces = Source.fromIterable((rootElem ++ Source.fromString(s + source.ch) ++ source).toIterable)
         //SequenceInputStream may be used if we want an InputStream (below) rather than an Iterator
         // This parser blows up if there's leading whitespace, whereas XML.load doesn't
-        fromSource(docWithNamespaces, true).document.docElem })
+        fromSource(docWithNamespaces, true).document.docElem }),
+      lang
     )(loadXml("_layout.html"))
 
   get("/") {
@@ -52,14 +52,19 @@ class MusicPath extends ScalatraServlet {
     recurseNodes(Model/UriRef("http://musicpath.org/bands/cull"))(bandTemp)
   }
 */
+ 
+//  before {
+//    val lang = request.getLocale.getLanguage
+//  }
+
   get("/:kind/") {
     val kind = params("kind")
-    template(kind+"/index.html", kind+"/")
+    template(kind+"/index.html", kind+"/", request.getLocale.getLanguage)
   }
 
   get("/:kind/:id") {
     val kind = params("kind")
     val id = params("id")
-    template(kind+"/view.html", kind+"/"+id)
+    template(kind+"/view.html", kind+"/"+id, request.getLocale.getLanguage)
   }
 }
