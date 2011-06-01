@@ -1,18 +1,11 @@
 import sbt._
-import org.coffeescript.CoffeeScriptCompile
 
-class FunesProject(info: ProjectInfo) extends DefaultWebProject(info) with CoffeeScriptCompile
+class FunesProject(info: ProjectInfo) extends DefaultProject(info)
 {
-  // Web server:
-  val scalatraVersion = "2.0.0-SNAPSHOT"
-
-  val jettyGroupId = "org.eclipse.jetty"
-  val jettyVersion = "7.4.1.v20110513"
   //val scalatraVersion = "2.0.0.M2"
-  val scalatra = "org.scalatra" %% "scalatra" % scalatraVersion
-  val sonatypeNexusSnapshots = "Sonatype Nexus Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
+  //val sonatypeNexusSnapshots = "Sonatype Nexus Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
   // RDF support:
-  val mavenLocal = "Local Maven Repository" at "file://"+Path.userHome+"/.m2/repository"
+//  val mavenLocal = "Local Maven Repository" at "file://"+Path.userHome+"/.m2/repository"
   val scardf = "org.scardf" % "scardf" % "0.5" from "http://scardf.googlecode.com/files/scardf-0.5.jar"
     val jodatime = "joda-time" % "joda-time" % "1.6.1" // Used by scardf
 val jenaRepo = "OpenJena repo" at "http://openjena.org/repo"
@@ -24,20 +17,19 @@ val jenaRepo = "OpenJena repo" at "http://openjena.org/repo"
 //  val jettytester = "org.mortbay.jetty" % "jetty-servlet-tester" % "6.1.22" % "test"
 
 //val jetty7 = jettyGroupId % "jetty-webapp" % jettyVersion % "test"
-val jettytester = jettyGroupId % "test-jetty-servlet" % jettyVersion % "test"
+//val jettytester = jettyGroupId % "test-jetty-servlet" % jettyVersion % "test"
 
   // Utility
-  val commons_io = "commons-io" % "commons-io" % "1.4"
+//  val commons_io = "commons-io" % "commons-io" % "1.4"
 
 //  val servletApi = "org.mortbay.jetty" % "servlet-api" % "2.5-20081211" % "provided"
     val servletApi = "javax.servlet" % "servlet-api" % "2.5" % "provided"
 
   // Testing:
-  val scalatest = "org.scalatra" %% "scalatra-scalatest" % scalatraVersion % "test"
   val specs = "org.scala-tools.testing" % "specs_2.8.1_java_1.5" % "1.6.6" % "test"
 
-  override def coffeeScriptDirectoryPathFinder = "src" / "main" / "coffeescript"
-  override def coffeeScriptCompiledOuputDirectory = "src/main/webapp/js"
+//  override def coffeeScriptDirectoryPathFinder = "src" / "main" / "coffeescript"
+//  override def coffeeScriptCompiledOuputDirectory = "src/main/webapp/js"
 //  val scalatest = "org.scalatest" % "scalatest" % "1.0" % "test"
 //  val knockoff = "com.tristanhunt" %% "knockoff" % "0.7.2-13"
 //  val t_repo = "t_repo" at "http://tristanhunt.com:8081/content/groups/public/"
