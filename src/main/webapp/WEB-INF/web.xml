@@ -5,12 +5,12 @@
 <web-app>
 
   <servlet>
-    <servlet-name>MusicPath</servlet-name>
-    <servlet-class>info.funesrdf.MusicPath</servlet-class>
+    <servlet-name>Funes</servlet-name>
+    <servlet-class>info.funesrdf.Funes</servlet-class>
   </servlet>
 
   <servlet-mapping>
-    <servlet-name>MusicPath</servlet-name>
+    <servlet-name>Funes</servlet-name>
     <url-pattern>/*</url-pattern>
   </servlet-mapping>
 
