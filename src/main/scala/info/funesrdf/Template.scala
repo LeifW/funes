@@ -151,12 +151,13 @@ class Template(page:GraphNode, includes:Map[String, Include], lang:LangTag) {
     }
 
 
-    def populateLink(existingAttributes:MetaData, attributeName:String)(subject:GraphNode):UnprefixedAttribute = {
-      // If this element didn't come with a linky-type attribute, let's make one called say, "about"
+    def populateLink(existingAttributes:MetaData, attributeName:String)(subject:GraphNode):MetaData = {
+      // If this element didn't come with a linky-type attribute, and we're not at a blank noe, 
+      // let's make one called say, "about".
       // If it did come with one, take it off, we're replacing it with the uri of the current subject.
       val (currentName, currentAttributes) =
         if (attributeName == "")
-          ("about", existingAttributes)
+          if (!subject.node.isBlank) ("about", existingAttributes) else return existingAttributes 
         else
           (attributeName, existingAttributes.remove(attributeName))
           // Remove the "src" or whatever attrib here cuz we're gonna replace it with a filled-in version below.
@@ -189,6 +190,11 @@ class Template(page:GraphNode, includes:Map[String, Include], lang:LangTag) {
         case None=> (attributes, contents)
       }
 
+   /*
+    Process the tree in 'incomplete triple' mode - we've been sent here by a link (rel/rev) ,
+    and are going to recurse, copying the whole way down, until we find a target for that
+    link.  Then, proceed normally with that as the new subject.
+    */
     private def copyTilLink(node:Node)(subject:GraphNode):NodeSeq = node match {
       case Elem(null, "include", attributes, _, _ *) => <freakYield/> //ttributes.key match {
         //case "yield" => <yielded/>
@@ -229,6 +235,9 @@ class Template(page:GraphNode, includes:Map[String, Include], lang:LangTag) {
     // - The other, the default, is to just carry a subject, and be on the lookout for rel attributes.
     // We didn't have a rel when we came here:
 
+  /*
+    Here, having a current subject, and arriving at an element, we will check for a (rel/rev) link to a new subject(s).
+   */
     def processLinks(subject:GraphNode, e:Elem):NodeSeq = {
   val atts = e.attributes.map(_.key).toSet
   // Get the name of a linky attribute, if there is one.
@@ -257,7 +266,16 @@ class Template(page:GraphNode, includes:Map[String, Include], lang:LangTag) {
         // eg. e.copy( child = propOrSprintf( newSubjects.flatMap... )
         // how about templateSingle(newSubjects...)
         // If you put a property or a template-value on an element with a rel, the text will appear before the child element.
-        case None => e.copy( attributes = proppedAttributes, child = contents.dropWhile(!_.isInstanceOf[Text]).headOption.toSeq ++ newSubjects.flatMap( copyTilLink( e.child.dropWhile(!_.isInstanceOf[Elem]).headOption.getOrElse(error("Nothing for the rel to point to")) ) ).toSeq)
+        case None => {
+          // TODO: write selection function
+          val template = e.child.dropWhile(!_.isInstanceOf[Elem]).headOption.getOrElse(error("Nothing for the rel to point to!") )
+          // Find the template you want to repeat.  If we're a rel marked 'anon', save a copy of the template on the DOM.
+          e.copy(
+            attributes = proppedAttributes,
+            child = contents.dropWhile(!_.isInstanceOf[Text]).headOption.toSeq ++  // Get the first Text, looks like
+              newSubjects.flatMap( copyTilLink( template ) ).toSeq                 // 'Zip' the new subjects together with the selected template.
+          )
+        }
       }
     }
     case None => {
