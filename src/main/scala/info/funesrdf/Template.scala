@@ -273,9 +273,11 @@ class Template(page:GraphNode, includes:Map[String, Include], lang:LangTag) {
           val template = e.child.dropWhile(!_.isInstanceOf[Elem]).headOption.getOrElse(error("Nothing for the rel to point to!") ).asInstanceOf[Elem]
           // Find the template you want to repeat.  If we're a rel marked 'anon', save a copy of the template on the DOM.
           e.copy(
-            attributes = proppedAttributes,
+            attributes = if (proppedAttributes.get("data-selector").exists( _ == "anon" ))
+                           new UnprefixedAttribute("data-template", template.toString(), proppedAttributes)
+                         else
+                           proppedAttributes,
             child =
-              if (proppedAttributes.get("data-selector").exists( _ == "anon" )) addClass(template, "template") else Nil ++
               e.child.dropWhile(!_.isInstanceOf[Text]).headOption.toSeq ++  // Get the first Text, looks like
               newSubjects.flatMap( copyTilLink( template ) ).toSeq                 // 'Zip' the new subjects together with the selected template.
           )
