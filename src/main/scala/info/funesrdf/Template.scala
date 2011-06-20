@@ -60,7 +60,8 @@ class Template(page:GraphNode, includes:Map[String, Include], lang:LangTag) {
                 
   }
 
-  def addClass(atts:MetaData, className:String) = atts get "class" match {
+  def addClass(elem:Elem, className:String):Elem = elem.copy(attributes = addClass(elem.attributes, className))
+  def addClass(atts:MetaData, className:String):UnprefixedAttribute = atts get "class" match {
     case None => new UnprefixedAttribute("class", className, atts)
     case Some(existing) => new UnprefixedAttribute("class",
       existing + " " + className,
@@ -266,16 +267,20 @@ class Template(page:GraphNode, includes:Map[String, Include], lang:LangTag) {
         // eg. e.copy( child = propOrSprintf( newSubjects.flatMap... )
         // how about templateSingle(newSubjects...)
         // If you put a property or a template-value on an element with a rel, the text will appear before the child element.
+
         case None => {
-          // TODO: write selection function
-          val template = e.child.dropWhile(!_.isInstanceOf[Elem]).headOption.getOrElse(error("Nothing for the rel to point to!") )
+          // TODO: write selection function that's more sophisticated than 'take the first child element'
+          val template = e.child.dropWhile(!_.isInstanceOf[Elem]).headOption.getOrElse(error("Nothing for the rel to point to!") ).asInstanceOf[Elem]
           // Find the template you want to repeat.  If we're a rel marked 'anon', save a copy of the template on the DOM.
           e.copy(
             attributes = proppedAttributes,
-            child = contents.dropWhile(!_.isInstanceOf[Text]).headOption.toSeq ++  // Get the first Text, looks like
+            child =
+              if (proppedAttributes.get("data-selector").exists( _ == "anon" )) addClass(template, "template") else Nil ++
+              e.child.dropWhile(!_.isInstanceOf[Text]).headOption.toSeq ++  // Get the first Text, looks like
               newSubjects.flatMap( copyTilLink( template ) ).toSeq                 // 'Zip' the new subjects together with the selected template.
           )
         }
+
       }
     }
     case None => {
