@@ -188,7 +188,25 @@ class Template(page:GraphNode, includes:Map[String, Include], lang:LangTag) {
         // I just didn't want to have no values remove the element that has the link
         }
         // TODO: sprintf can happen here
-        case None=> (attributes, contents)
+        case None => A.templateValues(e) match {
+          case Some(properties) =>  {
+            // TODO: invalid CURIEs get dropped off at this point.
+            // Take the first value for each property listed
+            // head may fail, might want to use headOption instead?
+            // If head fails, then "%s".format() will fail if not provided enough values.
+            val values = properties.map( (p)=> toScalaType(subject/p head) )
+            (
+              attributes.remove("template-values"),
+              contents map {
+                case Text(s) => Text( s.format(values : _*) )
+                case other => other
+              }
+            )
+          }
+
+          case None => (attributes, contents)
+        }
+
       }
 
    /*
@@ -274,7 +292,7 @@ class Template(page:GraphNode, includes:Map[String, Include], lang:LangTag) {
           // Find the template you want to repeat.  If we're a rel marked 'anon', save a copy of the template on the DOM.
           e.copy(
             attributes = if (proppedAttributes.get("data-selector").exists( _ == "anon" ))
-                           new UnprefixedAttribute("data-template", template.toString(), proppedAttributes)
+                           new UnprefixedAttribute("data-template", template.toString, proppedAttributes)
                          else
                            proppedAttributes,
             child =
