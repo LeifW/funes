@@ -2,7 +2,7 @@ package info.funesrdf
 
 import org.scardf.{Node=>RdfNode, NodeConverter, SubjectNode, Property, GraphNode, UriRef, Blank, TypedLiteral, PlainLiteral, LangTag, XSD, having}
 import NodeConverter.{asGraphNode, asLexic}
-import scala.xml.{NodeSeq, Node, Elem, Text, NamespaceBinding, MetaData, PrefixedAttribute, UnprefixedAttribute}
+import scala.xml.{NodeSeq, Node=>XmlNode, Elem, Text, NamespaceBinding, MetaData, PrefixedAttribute, UnprefixedAttribute}
 import java.net.URI
 
 /*
@@ -15,11 +15,13 @@ import java.net.URI
 
 
 object Template {
-  def apply(page:GraphNode, includes:Map[String, Include], lang:String) = new Template(page, includes, LangTag(lang))
+  def apply(startNode:GraphNode):Template = apply(startNode, "en")
+  def apply(startNode:GraphNode, lang:String):Template = apply(startNode, Map.empty, lang)
+  def apply(startNode:GraphNode, includes:Map[String, Include], lang:String):Template = new Template(startNode, includes, LangTag(lang))
 }
 
-class Template(page:GraphNode, includes:Map[String, Include], lang:LangTag) {
-  val pageUri = new URI(page.node.asInstanceOf[UriRef].uri)
+class Template(startNode:GraphNode, includes:Map[String, Include], lang:LangTag) {
+  val pageUri = new URI(startNode.node.asInstanceOf[UriRef].uri)
   //var pageUri:URI
   object A { // convenience methods for retrieving the various RDFa attributes
     def curie(attrVal:String, scope:NamespaceBinding) = attrVal.split(':') match {
@@ -112,7 +114,7 @@ class Template(page:GraphNode, includes:Map[String, Include], lang:LangTag) {
     }
 
 
-    def datatype(l:org.scardf.Node):(String, String) = l match {
+    def datatype(l:RdfNode):(String, String) = l match {
         case TypedLiteral(string, XSD.string) => (string, "xs:string")
         case TypedLiteral(string, XSD.int) => (string, "xs:int")
         case TypedLiteral(string, XSD.integer) => (string, "xs:integer")
@@ -196,7 +198,7 @@ class Template(page:GraphNode, includes:Map[String, Include], lang:LangTag) {
     and are going to recurse, copying the whole way down, until we find a target for that
     link.  Then, proceed normally with that as the new subject.
     */
-    private def copyTilLink(node:Node)(subject:GraphNode):NodeSeq = node match {
+    private def copyTilLink(start:XmlNode)(subject:GraphNode):NodeSeq = start match {
       case Elem(null, "include", attributes, _, _ *) => <freakYield/> //ttributes.key match {
         //case "yield" => <yielded/>
       //
@@ -303,9 +305,9 @@ class Template(page:GraphNode, includes:Map[String, Include], lang:LangTag) {
   }
     }
 
-    def recurseNodes(subject:GraphNode)(node:Node):NodeSeq = node match {
+    def recurseNodes(subject:GraphNode)(document:XmlNode):NodeSeq = document match {
       case Elem(null, "include", attributes, _, _ *) => attributes.key match {
-        case "yield" => recurseNodes(subject)(includes("yield")(node.scope.toString, subject))
+        case "yield" => recurseNodes(subject)(includes("yield")(document.scope.toString, subject))
         case other:String => includes(other)(attributes.value.text, subject)
     }
       case e:Elem => {
@@ -316,7 +318,7 @@ class Template(page:GraphNode, includes:Map[String, Include], lang:LangTag) {
         //case t:Text => t
     }
 
-  def apply(node:Node):NodeSeq = recurseNodes(page)(node)
+  def apply(document:XmlNode):NodeSeq = recurseNodes(startNode)(document)
 }
 
 // vim: set ts=4 sw=4 et:
